@@ -1,0 +1,24 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tom-frontend
+  namespace: tom
+rules:
+- apiGroups: [""]
+  resources: 
+    - "endpoints"
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tom-frontend
+  namespace: tom
+subjects:
+- kind: ServiceAccount
+  name: tom-frontend
+  namespace: tom
+roleRef:
+  kind: Role 
+  name: tom-frontend
+  apiGroup: rbac.authorization.k8s.io

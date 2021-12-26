@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: tom-frontend
+  namespace: tom
+
+  labels:
+    app: tom-frontend
+
+spec:
+  replicas: 1
+
+  strategy:
+    rollingUpdate:
+      maxSurge: "25%"
+      maxUnavailable: "25%"
+
+  selector:
+    matchLabels:
+      app: tom-frontend
+
+  template:
+    metadata:
+      labels:
+        app: tom-frontend
+
+    spec:
+      serviceAccountName: tom-frontend
+
+      containers:
+        - name: tom-frontend
+          image: quay.io/jberchez-redhat/tom-frontend:v1.1
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+  
+            - name: BACKEND_SERVICE
+              value: "tom-backend"
+          ports:
+            - name: http
+              containerPort: 8080
