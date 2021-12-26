@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"sort"
+	"syscall"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -175,8 +178,39 @@ func main() {
 		ReadTimeout:  15 * time.Second,
 	}
 
-	isServerReady = true
+	go func() {
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			// Unexpected error, port in use?
+			log.Fatalf("ListenAndServe(): %v", err)
+		}
+	}()
 
 	log.Printf("Server listening or port %s\n", listenPort)
-	log.Fatal(srv.ListenAndServe())
+
+	isServerReady = true
+
+	stopC := make(chan os.Signal)
+	signal.Notify(stopC, syscall.SIGTERM, syscall.SIGINT)
+	sig := <-stopC
+
+	// For health checks
+	isServerReady = false
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	switch sig {
+	case syscall.SIGTERM:
+		log.Println("got signal SIGTERM")
+	case syscall.SIGINT:
+		log.Println("got signal SIGINT")
+	default:
+		log.Println("got unknown signal")
+	}
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal(err) // Failure/timeout shutting down the server gracefully
+	}
+
+	log.Println("server exited properly")
 }
