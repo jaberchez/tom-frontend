@@ -145,6 +145,27 @@ func startupHealthCheck(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func readinessHealthCheck(w http.ResponseWriter, r *http.Request) {
+	if !isServerReady {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "Server is not ready")
+	}
+
+	_, err := backend.Get(backendService, podNamespace)
+
+	if err != nil {
+		log.Println(err.Error())
+
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "some internal error ocurred")
+
+		return
+	}
+
+	w.WriteHeader(http.StatusInternalServerError)
+	fmt.Fprintf(w, "Listener is not ready")
+}
+
 func main() {
 	backendService = os.Getenv("BACKEND_SERVICE")
 	podNamespace = os.Getenv("POD_NAMESPACE")
@@ -167,7 +188,7 @@ func main() {
 	r.HandleFunc("/", homePage).Methods("GET") // Only GETT allowed
 	r.HandleFunc("/startup", startupHealthCheck)
 	r.HandleFunc("/liveness", healthCheck)
-	r.HandleFunc("/readiness", healthCheck)
+	r.HandleFunc("/readiness", readinessHealthCheck)
 
 	srv := &http.Server{
 		Handler:      r,
