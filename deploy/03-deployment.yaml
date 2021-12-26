@@ -42,3 +42,24 @@ spec:
           ports:
             - name: http
               containerPort: 8080
+
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 3
+
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 3
+  
+          startupProbe:
+            httpGet:
+              path: /startup
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 3

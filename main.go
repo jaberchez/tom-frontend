@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"sort"
+	"syscall"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -15,6 +18,7 @@ import (
 var (
 	backendService string
 	podNamespace   string
+	isServerReady  bool
 )
 
 func homePage(w http.ResponseWriter, r *http.Request) {
@@ -30,11 +34,9 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	trunc := 80
-	//data := make(map[string]string)
 	var result string
 
 	for _, item := range backends {
-		//data := make(map[string]string)
 
 		envs, err := backend.GetEnvVars(item.IP, item.Port)
 
@@ -133,6 +135,37 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "OK")
 }
 
+func startupHealthCheck(w http.ResponseWriter, r *http.Request) {
+	if isServerReady {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "Listener is up and running")
+	} else {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "Listener is not ready")
+	}
+}
+
+func readinessHealthCheck(w http.ResponseWriter, r *http.Request) {
+	if !isServerReady {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "Server is not ready")
+	}
+
+	_, err := backend.Get(backendService, podNamespace)
+
+	if err != nil {
+		log.Println(err.Error())
+
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "some internal error ocurred")
+
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "Listener is up and running")
+}
+
 func main() {
 	backendService = os.Getenv("BACKEND_SERVICE")
 	podNamespace = os.Getenv("POD_NAMESPACE")
@@ -153,9 +186,9 @@ func main() {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/", homePage).Methods("GET") // Only GETT allowed
-	r.HandleFunc("/startup", healthCheck)
+	r.HandleFunc("/startup", startupHealthCheck)
 	r.HandleFunc("/liveness", healthCheck)
-	r.HandleFunc("/readiness", healthCheck)
+	r.HandleFunc("/readiness", readinessHealthCheck)
 
 	srv := &http.Server{
 		Handler:      r,
@@ -164,6 +197,39 @@ func main() {
 		ReadTimeout:  15 * time.Second,
 	}
 
+	go func() {
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			// Unexpected error, port in use?
+			log.Fatalf("ListenAndServe(): %v", err)
+		}
+	}()
+
 	log.Printf("Server listening or port %s\n", listenPort)
-	log.Fatal(srv.ListenAndServe())
+
+	isServerReady = true
+
+	stopC := make(chan os.Signal)
+	signal.Notify(stopC, syscall.SIGTERM, syscall.SIGINT)
+	sig := <-stopC
+
+	// For health checks
+	isServerReady = false
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	switch sig {
+	case syscall.SIGTERM:
+		log.Println("got signal SIGTERM")
+	case syscall.SIGINT:
+		log.Println("got signal SIGINT")
+	default:
+		log.Println("got unknown signal")
+	}
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal(err) // Failure/timeout shutting down the server gracefully
+	}
+
+	log.Println("server exited properly")
 }
