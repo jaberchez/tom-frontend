@@ -34,11 +34,9 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	trunc := 80
-	//data := make(map[string]string)
 	var result string
 
 	for _, item := range backends {
-		//data := make(map[string]string)
 
 		envs, err := backend.GetEnvVars(item.IP, item.Port)
 
