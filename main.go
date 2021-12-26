@@ -162,8 +162,8 @@ func readinessHealthCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusInternalServerError)
-	fmt.Fprintf(w, "Listener is not ready")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "Listener is up and running")
 }
 
 func main() {
