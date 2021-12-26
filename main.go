@@ -15,6 +15,7 @@ import (
 var (
 	backendService string
 	podNamespace   string
+	isServerReady  bool
 )
 
 func homePage(w http.ResponseWriter, r *http.Request) {
@@ -133,6 +134,16 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "OK")
 }
 
+func startupHealthCheck(w http.ResponseWriter, r *http.Request) {
+	if isServerReady {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "Listener is up and running")
+	} else {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "Listener is not ready")
+	}
+}
+
 func main() {
 	backendService = os.Getenv("BACKEND_SERVICE")
 	podNamespace = os.Getenv("POD_NAMESPACE")
@@ -153,7 +164,7 @@ func main() {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/", homePage).Methods("GET") // Only GETT allowed
-	r.HandleFunc("/startup", healthCheck)
+	r.HandleFunc("/startup", startupHealthCheck)
 	r.HandleFunc("/liveness", healthCheck)
 	r.HandleFunc("/readiness", healthCheck)
 
@@ -163,6 +174,8 @@ func main() {
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
+
+	isServerReady = true
 
 	log.Printf("Server listening or port %s\n", listenPort)
 	log.Fatal(srv.ListenAndServe())
