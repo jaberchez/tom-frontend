@@ -1,13 +1,11 @@
 package k8s
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"log"
 	"path/filepath"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -26,21 +24,21 @@ func init() {
 	}
 }
 
-func GetEndpoints(name string, namespace string) (map[string]int, error) {
-	servers := make(map[string]int)
-
-	// Get Endpoints
-	endpoints, err := clientset.CoreV1().Endpoints(namenamespace).Get(context.Background(),
-		name, metav1.GetOptions{})
-
-	if err != nil {
-		return nil, err
-	}
-
-	if endpoints.Subsets
-
-	return endpoints, nil
-}
+//func GetEndpoints(name string, namespace string) (map[string]int, error) {
+//	servers := make(map[string]int)
+//
+//	// Get Endpoints
+//	endpoints, err := clientset.CoreV1().Endpoints(namenamespace).Get(context.Background(),
+//		name, metav1.GetOptions{})
+//
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	if endpoints.Subsets
+//
+//	return endpoints, nil
+//}
 
 func createK8sClientSet() error {
 	var config *rest.Config
