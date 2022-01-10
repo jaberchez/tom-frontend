@@ -6,14 +6,8 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
-	"strings"
 
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -33,7 +27,7 @@ func init() {
 }
 
 func GetEndpoints(name string, namespace string) (map[string]int, error) {
-	servers := (make map[string]int)
+	servers := make(map[string]int)
 
 	// Get Endpoints
 	endpoints, err := clientset.CoreV1().Endpoints(namenamespace).Get(context.Background(),
