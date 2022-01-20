@@ -127,7 +127,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 
 		result += "</table></html>"
 
-		fmt.Fprintf(w, result)
+		fmt.Fprint(w, result)
 	}
 }
 
