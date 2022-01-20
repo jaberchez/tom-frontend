@@ -12,10 +12,6 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-var (
-	clientset *kubernetes.Clientset
-)
-
 func init() {
 	err := createK8sClientSet()
 
