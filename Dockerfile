@@ -13,6 +13,13 @@ FROM centos:8
 ARG APP_VERSION=v1.0
 ENV APP_VERSION=${APP_VERSION}
 
+# Note: These arguments will be provided by CI pipeline with the right values
+ARG COMMIT_ID
+ARG SHORT_COMMIT_ID
+
+LABEL git.commit-id=${COMMIT_ID}
+LABEL git.short-commit-id=${SHORT_COMMIT_ID}
+
 USER root
 
 # Copy app from builder image

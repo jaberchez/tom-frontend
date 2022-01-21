@@ -127,7 +127,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
 
 		result += "</table></html>"
 
-		fmt.Fprintf(w, result)
+		fmt.Fprint(w, result)
 	}
 }
 
@@ -208,7 +208,7 @@ func main() {
 
 	isServerReady = true
 
-	stopC := make(chan os.Signal)
+	stopC := make(chan os.Signal, 1)
 	signal.Notify(stopC, syscall.SIGTERM, syscall.SIGINT)
 	sig := <-stopC
 
